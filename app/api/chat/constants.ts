@@ -23,3 +23,17 @@ export const categorizationPrompt = (userPrompt: string) => {
 
     Request: ${userPrompt}`
 }
+
+export const codeblockPrompt = (userPrompt: string) => {
+  return `
+    Without returning any explanation return the code only in React and Typescript and TailwindCSS,
+    without using exernal libraries.
+
+    Give the same name for the component as the one in the request.
+
+    Use Markdown rules to detect the codeblock.
+
+    If the request does not say otherwise always make the simplest components with minimal code.
+
+    Request: ${userPrompt}`
+}

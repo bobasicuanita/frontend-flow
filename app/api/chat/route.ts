@@ -1,6 +1,6 @@
 import { streamText, generateText, UIMessage, convertToModelMessages } from 'ai';
 import { openai } from "@ai-sdk/openai";
-import { categorizationPrompt } from './constants';
+import { categorizationPrompt, codeblockPrompt } from './constants';
 
 export async function POST(req: Request) {
   const { messages }: { messages: UIMessage[] } = await req.json();
@@ -13,6 +13,23 @@ export async function POST(req: Request) {
     model: openai("gpt-4.1-mini"),
     prompt: categorizationPrompt(userPrompt),
   })
+
+  if (categorization.text.trim() === 'code_generation') {
+
+    const result = streamText({
+      model: openai("gpt-5.4-mini"),
+      prompt: codeblockPrompt(userPrompt)
+    })
+
+    return result.toUIMessageStreamResponse()
+  } else {
+    const result = streamText({
+      model: openai("gpt-5.4-mini"),
+      messages: await convertToModelMessages(messages),
+    });
+
+    return result.toUIMessageStreamResponse();
+  }
 
   // const reasoning = await generateText({
   //   model: openai("gpt-4.1-mini"),
@@ -27,10 +44,4 @@ export async function POST(req: Request) {
   //   reasoning: reasoning.text,
   // });
 
-  const result = streamText({
-    model: openai("gpt-5.4-mini"),
-    messages: await convertToModelMessages(messages),
-  });
-
-  return result.toUIMessageStreamResponse();
 }
