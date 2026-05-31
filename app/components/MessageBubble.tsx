@@ -1,6 +1,7 @@
-import { memo, useMemo } from "react";
+import { memo, useMemo, useState } from "react";
 import CodeBlock from "./CodeBlock";
 import Preview from "./Preview";
+import { loadingMessages } from "../api/chat/constants";
 
 export type AIResponse = {
   type: "chat" | "component";
@@ -14,6 +15,8 @@ interface MessageBubbleProps {
   data: string;
   durations: Record<string, number>;
   id: string;
+  status: string;
+  isLatest: boolean;
 }
 
 function safeParse(data: string): AIResponse | null {
@@ -24,8 +27,23 @@ function safeParse(data: string): AIResponse | null {
   }
 }
 
-function MessageBubble({ role, data, durations, id }: MessageBubbleProps) {
-  const parsed = useMemo(() => safeParse(data), [data]);
+function MessageBubble({
+  role,
+  data,
+  durations,
+  id,
+  status,
+  isLatest,
+}: MessageBubbleProps) {
+  const isStreaming = isLatest && status === "streaming";
+  const parsed = useMemo(() => {
+    if (isStreaming) return null;
+    return safeParse(data);
+  }, [data, isStreaming]);
+
+  const [loadingMessage] = useState(
+    () => loadingMessages[Math.floor(Math.random() * loadingMessages.length)],
+  );
 
   if (role === "user") {
     return (
@@ -35,19 +53,25 @@ function MessageBubble({ role, data, durations, id }: MessageBubbleProps) {
     );
   }
 
+  const duration = durations[id];
+
   return (
     <div>
-      {durations[id] !== undefined && (
-        <p className="mt-4 text-sm text-zinc-500">
-          Thought for {durations[id]}s
-        </p>
-      )}
+      <div className="text-sm text-zinc-500 min-h-[20px]">
+        {status === "streaming" && isLatest
+          ? loadingMessage
+          : duration !== undefined
+            ? `Thought for ${duration}s`
+            : " "}
+      </div>
 
-      {!parsed && <div className="text-sm">{data}</div>}
+      {!parsed && <div className="text-sm whitespace-pre-line">{data}</div>}
 
       {parsed && (
         <>
-          <div className="text-sm">{parsed.explanation}</div>
+          <div className="text-sm whitespace-pre-line">
+            {parsed.explanation}
+          </div>
 
           {parsed.type === "component" && parsed.code && (
             <>

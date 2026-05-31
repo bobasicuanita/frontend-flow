@@ -2,6 +2,7 @@ import { useState, useEffect, useMemo, useRef } from "react";
 import { UIMessage } from "ai";
 import MessageBubble from "./MessageBubble";
 import type { AIResponse } from "./MessageBubble";
+import { loadingMessages } from "../api/chat/constants";
 
 interface ChatMessagesProps {
   messages: UIMessage[];
@@ -28,6 +29,9 @@ export default function ChatMessages({
 }: ChatMessagesProps) {
   const [durations, setDurations] = useState<Record<string, number>>({});
   const startTimes = useRef<Record<string, number>>({});
+  const [loadingMessage] = useState(
+    () => loadingMessages[Math.floor(Math.random() * loadingMessages.length)],
+  );
 
   const lastMessage = messages[messages.length - 1];
 
@@ -112,6 +116,8 @@ export default function ChatMessages({
                 data={part.text}
                 durations={durations}
                 id={lastMessage.id}
+                status={status}
+                isLatest={true}
               />
             );
           })}
@@ -136,22 +142,23 @@ export default function ChatMessages({
                   data={part.text}
                   durations={durations}
                   id={message.id}
+                  status={status}
+                  isLatest={message.id === lastMessage?.id}
                 />
               );
             })}
           </div>
         ))}
 
-      {isThinking && (
-        <div className="flex justify-start">
-          <p className="text-sm text-zinc-500">Thinking...</p>
-        </div>
-      )}
-      {status === "streaming" && isComponentMode && (
-        <div className="flex justify-start">
-          <p className="text-sm text-zinc-500">Generating response...</p>
-        </div>
-      )}
+      <div className="flex justify-start">
+        <p className="text-sm text-zinc-500">
+          {isThinking
+            ? "Thinking..."
+            : status === "streaming" && isComponentMode
+              ? loadingMessage
+              : null}
+        </p>
+      </div>
     </div>
   );
 }
