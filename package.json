@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev",
+    "dev": "next dev --experimental-https",
     "build": "next build",
     "start": "next start",
     "lint": "eslint"
@@ -11,6 +11,8 @@
   "dependencies": {
     "@ai-sdk/openai": "^3.0.64",
     "@ai-sdk/react": "^3.0.186",
+    "@codesandbox/sandpack-react": "^2.20.0",
+    "@webcontainer/api": "^1.6.4",
     "ai": "^6.0.184",
     "dompurify": "^3.4.5",
     "next": "16.2.6",

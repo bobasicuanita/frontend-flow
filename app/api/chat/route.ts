@@ -1,47 +1,22 @@
-import { streamText, generateText, UIMessage, convertToModelMessages } from 'ai';
+import {
+  streamText,
+  UIMessage,
+  convertToModelMessages,
+} from "ai";
 import { openai } from "@ai-sdk/openai";
-import { categorizationPrompt, codeblockPrompt } from './constants';
+import { setPrompt } from "./constants";
 
 export async function POST(req: Request) {
-  const { messages }: { messages: UIMessage[] } = await req.json();
+  const { messages }: { messages: UIMessage[] } =
+    await req.json();
 
-  const lastMessage = messages[messages.length - 1];
+  const modelMessages = await convertToModelMessages(messages);
 
-  const userPrompt = lastMessage.parts.filter(part => part.type === "text").map(part => part.text).join(" ");
-
-  const categorization = await generateText({
+  const result = await streamText({
     model: openai("gpt-4.1-mini"),
-    prompt: categorizationPrompt(userPrompt),
-  })
+    system: setPrompt(),
+    messages: modelMessages,
+  });
 
-  if (categorization.text.trim() === 'code_generation') {
-
-    const result = streamText({
-      model: openai("gpt-5.4-mini"),
-      prompt: codeblockPrompt(userPrompt)
-    })
-
-    return result.toUIMessageStreamResponse()
-  } else {
-    const result = streamText({
-      model: openai("gpt-5.4-mini"),
-      messages: await convertToModelMessages(messages),
-    });
-
-    return result.toUIMessageStreamResponse();
-  }
-
-  // const reasoning = await generateText({
-  //   model: openai("gpt-4.1-mini"),
-  //   prompt: `
-  //   Return a small explanation of your thought process for the user's prompt
-
-  //   Use up to 2 sentences.
-  //   `
-  // })
-
-  // return Response.json({
-  //   reasoning: reasoning.text,
-  // });
-
+  return result.toUIMessageStreamResponse();
 }

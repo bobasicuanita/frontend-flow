@@ -1,51 +1,64 @@
-import { memo, useRef, useEffect } from "react";
-import Markdown from "react-markdown";
+import { memo, useMemo } from "react";
 import CodeBlock from "./CodeBlock";
-import remarkGfm from "remark-gfm";
+import Preview from "./Preview";
+
+export type AIResponse = {
+  type: "chat" | "component";
+  reasoning: string;
+  explanation?: string;
+  code?: string;
+};
 
 interface MessageBubbleProps {
-  text: string;
   role: string;
+  data: string;
+  durations: Record<string, number>;
+  id: string;
 }
 
-function MessageBubble({ role, text }: MessageBubbleProps) {
-  function checkCodeblockFinished(text: string) {
-    const matches = text.match(/```/g);
-
-    return matches && matches.length % 2 !== 0;
+function safeParse(data: string): AIResponse | null {
+  try {
+    return JSON.parse(data);
+  } catch {
+    return null;
   }
+}
 
-  const shouldRenderMarkdown = !checkCodeblockFinished(text);
+function MessageBubble({ role, data, durations, id }: MessageBubbleProps) {
+  const parsed = useMemo(() => safeParse(data), [data]);
+
+  if (role === "user") {
+    return (
+      <div className="bg-taupe-200 rounded-xl my-4 p-2 px-4 py-1 w-fit text-sm">
+        {data}
+      </div>
+    );
+  }
 
   return (
     <div>
-      {role === "user" && (
-        <div
-          className={`${role === "user" && "bg-taupe-200 rounded-xl my-4 p-2  px-4 py-1"} w-fit text-sm`}
-        >
-          {text}
-        </div>
+      {durations[id] !== undefined && (
+        <p className="mt-4 text-sm text-zinc-500">
+          Thought for {durations[id]}s
+        </p>
       )}
-      {role === "assistant" && shouldRenderMarkdown && (
-        <Markdown
-          remarkPlugins={[remarkGfm]}
-          components={{
-            code({ children, className }) {
-              const lang = className?.replace("language-", "") || "txt";
-              if (!className) {
-                return (
-                  <code className="bg-zinc-800 px-1 py-0.5 rounded w-full">
-                    {children}
-                  </code>
-                );
-              }
 
-              return <CodeBlock code={String(children).trim()} lang={lang} />;
-            },
-          }}
-        >
-          {text}
-        </Markdown>
+      {!parsed && <div className="text-sm">{data}</div>}
+
+      {parsed && (
+        <>
+          <div className="text-sm">{parsed.explanation}</div>
+
+          {parsed.type === "component" && parsed.code && (
+            <>
+              <CodeBlock code={parsed.code} lang="tsx" />
+
+              <div className="mt-6">
+                <Preview code={parsed.code} />
+              </div>
+            </>
+          )}
+        </>
       )}
     </div>
   );
