@@ -1,31 +1,22 @@
-import { UIMessage } from "ai";
+import { useRef, useEffect } from "react";
+import { useChatContext } from "../_context/ChatContext";
 
-interface UserPromptInputProps {
-  input: string;
-  setInput: (value: string) => void;
-  sendMessage: (message: { text: string }) => void;
-  messages: UIMessage[];
-  setIsThinking: (value: boolean) => void;
-}
+export default function UserPromptInput() {
+  const inputRef = useRef<HTMLInputElement>(null);
+  const { input, setInput, sendMessage, messages } = useChatContext();
 
-export default function UserPromptInput({
-  input,
-  setInput,
-  sendMessage,
-  messages,
-  setIsThinking,
-}: UserPromptInputProps) {
+  useEffect(() => {
+    inputRef.current?.focus();
+  }, []);
+
   return (
     <div className="sticky bottom-0 w-full bg-white/80 backdrop-blur">
       <div className="max-w-3xl mx-auto p-4">
         <form
           onSubmit={(e) => {
-            setIsThinking(true);
             e.preventDefault();
 
             if (!input.trim()) return;
-
-            setIsThinking(true);
 
             sendMessage({
               text: input,
@@ -35,6 +26,7 @@ export default function UserPromptInput({
           }}
         >
           <input
+            ref={inputRef}
             value={input}
             onChange={(e) => setInput(e.target.value)}
             placeholder={
