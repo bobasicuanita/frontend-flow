@@ -16,6 +16,8 @@ bun dev
 
 Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
 
+You can view it live here: [https://frontend-flow-beta.vercel.app/](https://frontend-flow-beta.vercel.app/)
+
 # Challenges & Future Improvements
 
 ## Challenges I Faced
