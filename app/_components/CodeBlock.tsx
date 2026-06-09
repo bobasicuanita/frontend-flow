@@ -3,40 +3,40 @@
 import { useEffect, useState, memo, useRef } from "react";
 import { codeToHtml } from "shiki";
 import DOMPurify from "dompurify";
+import { Scrollbars } from "react-custom-scrollbars-2";
 import { Copy, Check } from "lucide-react";
+import { useCopyText } from "../_hooks/useCopyText";
 
 function CodeBlock({ code, lang }: { code: string; lang: string }) {
   const [html, setHtml] = useState("");
-  const [copied, setCopied] = useState(false);
+  const [height, setHeight] = useState(0);
+  const [hasVerticalScrollbar, setHasVerticalScrollbar] = useState(false);
+
+  const { copied, handleCopy } = useCopyText(code);
+
+  const contentRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     codeToHtml(code, {
       lang,
-      theme: "slack-dark",
+      theme: "night-owl-light",
     }).then(setHtml);
   }, [code, lang]);
 
-  const [hasVerticalScrollbar, setHasVerticalScrollbar] = useState(false);
-  const containerRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    const el = containerRef.current;
-    if (!el) return;
-
-    setHasVerticalScrollbar(el.scrollHeight > el.clientHeight);
-  }, [html]);
-
   const safeHtml = DOMPurify.sanitize(html);
 
-  const handleCopy = async () => {
-    await navigator.clipboard.writeText(code);
+  useEffect(() => {
+    if (!contentRef.current) return;
 
-    setCopied(true);
-    setTimeout(() => setCopied(false), 1500);
-  };
+    const contentHeight = contentRef.current.scrollHeight;
+    const maxHeight = 700;
+
+    setHeight(Math.min(contentHeight, maxHeight));
+    setHasVerticalScrollbar(contentHeight > maxHeight);
+  }, [safeHtml]);
 
   return (
-    <div className="relative overflow-hidden text-xs border border-zinc-800 group">
+    <div className="relative overflow-hidden text-xs group">
       <button
         onClick={handleCopy}
         className={`absolute top-4 z-10 rounded-md bg-zinc-900/80 text-white cursor-pointer p-2.5 hover:bg-zinc-800 transition backdrop-blur ${
@@ -46,10 +46,27 @@ function CodeBlock({ code, lang }: { code: string; lang: string }) {
         {copied ? <Check size={14} /> : <Copy size={14} />}
       </button>
       <div
-        ref={containerRef}
-        className="codeblock max-h-[500px] overflow-x-auto overflow-y-auto [&_pre]:p-4 [&_pre]:overflow-x-auto [&_pre]:whitespace-pre-wrap [&_pre]:wrap-break-word [&_code]:wrap-break-word"
+        ref={contentRef}
+        className="absolute invisible pointer-events-none w-full"
         dangerouslySetInnerHTML={{ __html: safeHtml }}
       />
+
+      <Scrollbars
+        style={{ height }}
+        renderThumbVertical={(props) => (
+          <div {...props} className="bg-zinc-400 rounded-full" />
+        )}
+      >
+        <div
+          className="codeblock
+            [&_pre]:p-4
+            [&_pre]:overflow-x-auto
+            [&_pre]:whitespace-pre-wrap
+            [&_pre]:wrap-break-word
+            [&_code]:wrap-break-word"
+          dangerouslySetInnerHTML={{ __html: safeHtml }}
+        />
+      </Scrollbars>
     </div>
   );
 }

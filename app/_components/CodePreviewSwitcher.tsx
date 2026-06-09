@@ -10,15 +10,15 @@ interface CodePreviewSwitcherProps {
 export default function CodePreviewSwitcher({
   code,
 }: CodePreviewSwitcherProps) {
-  const [view, setView] = useState<"preview" | "code">("preview");
+  const [view, setView] = useState<"preview" | "code">("code");
 
   return (
     <div className="overflow-hidden rounded-xl border border-zinc-200 bg-white shadow-sm">
       <div className="flex items-center justify-between border-b border-zinc-200 bg-zinc-50 px-4 py-3">
         <div className="flex gap-2">
-          <div className="h-3 w-3 rounded-full bg-red-400" />
+          {/* <div className="h-3 w-3 rounded-full bg-red-400" />
           <div className="h-3 w-3 rounded-full bg-yellow-400" />
-          <div className="h-3 w-3 rounded-full bg-green-400" />
+          <div className="h-3 w-3 rounded-full bg-green-400" /> */}
         </div>
 
         <div className="flex rounded-lg bg-zinc-100 p-1">

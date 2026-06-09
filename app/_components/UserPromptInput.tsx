@@ -1,30 +1,32 @@
 import { useRef, useEffect } from "react";
+import type { SyntheticEvent } from "react";
 import { useChatContext } from "../_context/ChatContext";
 
 export default function UserPromptInput() {
   const inputRef = useRef<HTMLInputElement>(null);
-  const { input, setInput, sendMessage, messages } = useChatContext();
+  const { input, setInput, sendMessage, messages, status } = useChatContext();
 
   useEffect(() => {
-    inputRef.current?.focus();
-  }, []);
+    if (status === "ready") {
+      inputRef.current?.focus();
+    }
+  }, [status]);
+
+  const handleSubmit = (e: SyntheticEvent<HTMLFormElement>) => {
+    e.preventDefault();
+
+    if (!input.trim()) return;
+
+    sendMessage({ text: input });
+    setInput("");
+  };
+
+  const isInputdisabled = status !== "ready";
 
   return (
-    <div className="sticky bottom-0 w-full bg-white/80 backdrop-blur">
-      <div className="max-w-3xl mx-auto p-4">
-        <form
-          onSubmit={(e) => {
-            e.preventDefault();
-
-            if (!input.trim()) return;
-
-            sendMessage({
-              text: input,
-            });
-
-            setInput("");
-          }}
-        >
+    <div className="sticky bottom-0 w-full backdrop-blur pb-8">
+      <div className="max-w-3xl mx-auto">
+        <form onSubmit={handleSubmit}>
           <input
             ref={inputRef}
             value={input}
@@ -34,13 +36,8 @@ export default function UserPromptInput() {
                 ? "Ask a follow-up question..."
                 : "Generate a button..."
             }
-            className="
-              w-full rounded-xl border border-zinc-300
-              bg-white px-4 py-3 shadow-sm
-              outline-none transition
-            focus:ring-black focus:outline-none
-              focus:ring-0 focus:border-zinc-300
-            "
+            disabled={isInputdisabled}
+            className={`w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 shadow-sm outline-none transition focus:ring-black focus:outline-none focus:ring-0 focus:border-zinc-300 ${isInputdisabled ? "disabled:bg-gray-100" : ""}`}
           />
         </form>
       </div>

@@ -1,10 +1,11 @@
-import { useRef, useEffect } from "react";
+import { useEffect, useRef } from "react";
+import { Scrollbars } from "react-custom-scrollbars-2";
 import { useChatContext } from "../_context/ChatContext";
-import UserPromptInput from "./UserPromptInput";
-import { isGenerateComponentPart } from "../_lib/utils";
-import SideChatMessage from "./SideChatMessage";
-import { useRandomLoadingMessage } from "../_hooks/useLoadingMessage";
+import ChatMessage from "./ChatMessage";
 import ChatStatusIndicator from "./ChatStatusIndicator";
+import UserPromptInput from "./UserPromptInput";
+import { useMessageTimes } from "../_hooks/useMessagetimes";
+import { useChatIndicator } from "../_hooks/useChatIndicator";
 
 interface SideChatLogProps {
   isThinking: boolean;
@@ -14,61 +15,55 @@ export default function SideChatLog({ isThinking }: SideChatLogProps) {
   const { messages, durations, status, setIsSideChatLogOpen } =
     useChatContext();
 
+  const messageTimes = useMessageTimes(messages);
+
   const lastMessage = messages[messages.length - 1];
-  const loadingMessage = useRandomLoadingMessage();
-  const scrollContainerRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    const container = scrollContainerRef.current;
-
-    if (container) {
-      container.scrollTo({
-        top: container.scrollHeight,
-        behavior: "smooth",
-      });
-    }
-  }, [messages, status]);
+  const scrollbarRef = useRef<Scrollbars>(null);
 
   useEffect(() => {
     setIsSideChatLogOpen(true);
   }, [setIsSideChatLogOpen]);
 
-  const lastAssistantHasContent =
-    lastMessage?.role === "assistant" &&
-    lastMessage.parts.some((part) => {
-      if (part.type === "text") return !!part.text;
-      if (isGenerateComponentPart(part)) return !!part.output?.code;
-      return false;
-    });
+  const isGenerating = status === "streaming";
 
-  const showThinking = isThinking || status === "submitted";
+  const { label, loadingMessage } = useChatIndicator(isThinking);
 
-  const showLoadingMessage =
-    !showThinking && status === "streaming" && !lastAssistantHasContent;
-
-  const indicatorLabel = showThinking
-    ? "Thinking..."
-    : showLoadingMessage
-      ? loadingMessage
-      : null;
+  useEffect(() => {
+    scrollbarRef.current?.scrollToBottom();
+  }, [messages, status]);
 
   return (
-    <div
-      ref={scrollContainerRef}
-      className="w-xs border-r-2 p-4 h-screen overflow-y-auto"
-    >
-      {messages.map((message) => (
-        <SideChatMessage
-          key={message.id}
-          message={message}
-          isLatest={message.id === lastMessage?.id}
-          durations={durations}
-          loadingMessage={loadingMessage}
-        />
-      ))}
+    <div className="w-full md:w-xs border-r border-zinc-300 min-h-screen flex flex-col bg-zinc-50">
+      <div className="flex-1 min-h-0">
+        <Scrollbars
+          ref={scrollbarRef}
+          style={{ width: "100%", height: "100%" }}
+        >
+          <div className="p-6">
+            {messages.map((message) => (
+              <ChatMessage
+                key={message.id}
+                variant="side"
+                message={message}
+                isLatest={message.id === lastMessage?.id}
+                durations={durations}
+                loadingMessage={loadingMessage}
+                createdAt={messageTimes[message.id]}
+              />
+            ))}
 
-      <ChatStatusIndicator label={indicatorLabel} />
-      <UserPromptInput />
+            <ChatStatusIndicator
+              label={label}
+              isThinking={isThinking}
+              isGenerating={isGenerating}
+            />
+          </div>
+        </Scrollbars>
+      </div>
+
+      <div className="px-3">
+        <UserPromptInput />
+      </div>
     </div>
   );
 }
